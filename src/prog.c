@@ -7,15 +7,7 @@
 
 
 //queues utility
-#include "queues.h"
-
-
-
-
-
-
-
-
+#include "../lib/queues.h"
 
 
 
@@ -46,16 +38,8 @@
     BUGS : Active bugs in last version.
     NOTES : Notes.
 
-    Contact     : 
+    Contact     : ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
-
-
-
-
-
-
-
 
 
 
@@ -77,9 +61,6 @@ int main(){
 
 
 
-
-
-
 	//CREATE
 
 	//create a queue
@@ -91,9 +72,6 @@ int main(){
 	//getting queue length
 	unsigned int len = queue_length(intQueue);
 	printf("I.A. > Queue length is %u.\n", len);
-
-
-
 
 
 
@@ -113,9 +91,6 @@ int main(){
 
 
 
-
-
-
 	//SHOW
 
 	//show each elements
@@ -132,10 +107,6 @@ int main(){
 
 
 
-
-
-
-
 	//DELETE
 
 	//deletting queue
@@ -145,9 +116,6 @@ int main(){
 
 	//check length
 	printf("I.A. > Now queue length is %u.\n", queue_length(intQueue));
-
-
-
 
 
 

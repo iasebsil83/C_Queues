@@ -1,9 +1,9 @@
 This program is an utility program that allows you to create
 and manipulate queues of any type (fixed type recommended).
 
-A demonstration program is made in prog.c.
+A demonstration program is made in src/prog.c.
 
-More information about this library are available in queues.c.
+More information about this library are available in lib/queues.c.
 
 
 

@@ -6,11 +6,11 @@ run: queues.o prog.o
 
 
 #example program
-prog.o: prog.c queues.h
-	gcc -Wall -c prog.c -O2
+prog.o: src/prog.c lib/queues.h
+	gcc -Wall -c src/prog.c -O2
 
 
 
 #queues library
-queues.o: queues.c queues.h
-	gcc -Wall -c queues.c -O2
+queues.o: lib/queues.c lib/queues.h
+	gcc -Wall -c lib/queues.c -O2
