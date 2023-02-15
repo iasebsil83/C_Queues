@@ -6,20 +6,9 @@
 
 
 
+
 //own header
 #include "queues.h"
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -96,19 +85,9 @@
 
 
 
+// ---------------- INSTANTIATION ----------------
 
-
-
-
-
-
-
-
-
-
-
-
-// ---------------- CREATE / DELETE ----------------
+//create - delete - length
 #define MEMORY_COPY_FROM_A_TO_B(A,B,size) \
 	for(unsigned int u=0; u < size; u++){ \
 		( (char*)(B) )[u] = ( (char*)(A) )[u]; \
@@ -193,20 +172,9 @@ void queue_delete(queue** q){ // WARNING ! Can cause free overlap if queue is a 
 
 
 
+// ---------------- USE ----------------
 
-
-
-
-
-
-
-
-
-
-
-
-// ---------------- GET / SET ----------------
-
+//get - set
 queue* queue_get(queue* q, unsigned int index){
 
 	//error cases
@@ -270,24 +238,7 @@ void queue_set(queue* q, unsigned int index, void* data, unsigned int size){ //d
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ---------------- ADD / REMOVE ----------------
-
+//add - remove
 void queue_addBeforeFirst(queue** q, void* data, unsigned int size){ //data used will no longer stay inside queue, it will be copied
                                                                      //WARNING ! Queue head may change !
 	//error cases

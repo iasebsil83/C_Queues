@@ -6,12 +6,9 @@
 
 
 
+
 //queues utility
 #include "../lib/queues.h"
-
-
-
-
 
 
 
@@ -48,14 +45,11 @@
 
 
 
-
-
-
-
 // ---------------- EXECUTION ----------------
 
 //main
 int main(){
+
 	//presentation
 	printf("I.A. > This is an example of using queues in C with \"queues.c/.h\".\n\n");
 
