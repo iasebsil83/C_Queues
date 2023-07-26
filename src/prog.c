@@ -4,13 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//to add text elements
+#include <string.h>
 
-
+//enable internal errors (stability over performance)
+//#define INTERNAL_ERRORS
 
 //queues utility
 #include "../lib/queues.h"
-
-
 
 
 
@@ -43,8 +44,6 @@
 
 
 
-
-
 // ---------------- EXECUTION ----------------
 
 //main
@@ -58,58 +57,58 @@ int main(){
 	//CREATE
 
 	//create a queue
-	printf("I.A. > Creating an int queue with -20 as first element...\n");
-	int start = -20;
-	queue* intQueue = queue_create(&start, sizeof(start));
-	printf("I.A. > Queue created.\n");
-
-	//getting queue length
-	unsigned int len = queue_length(intQueue);
-	printf("I.A. > Queue length is %u.\n", len);
+	printf("I.A. > Creating a queue...\n");
+	queue* myQ = queue_create();
+	printf("I.A. > Queue created (length %u).\n", myQ->length);
 
 
 
 	//ADD ELEMENTS
 
-	//add some elements to queue
-	for(int i=-12; i < 21; i++){
+	//add an integer value
+	int i = -12;
+	printf("I.A. > Adding integer %i to queue.\n", i);
+	queue_append(myQ, &i, sizeof(i));
 
-		//add
-		printf("I.A. > Adding %i to queue.\n", i);
-		queue_append(intQueue, &i, sizeof(i));
+	//add a long long number
+	long long l = 123456789012345678;
+	printf("I.A. > Adding long long %lld to queue.\n", l);
+	queue_append(myQ, &l, sizeof(l));
 
-		//check length
-		len = queue_length(intQueue);
-		printf("I.A. > Now, queue length is %u.\n", len);
-	}
+	//add a string
+	char s[]   = "Hello there !";
+	int  s_len = strlen(s);                               //exactly like storing a regular character
+	printf("I.A. > Adding string \"%s\" to queue.\n", s); //but the size is greater. So more than 1
+	queue_append(myQ, s, s_len);                          //character will be stored.
+
+	//add a single character
+	char c = '_';
+	printf("I.A. > Adding character '%c' to queue.\n", c);
+	queue_append(myQ, &c, sizeof(c));
+	printf("I.A. > Now, queue length is %u.\n", myQ->length);
 
 
 
 	//SHOW
 
 	//show each elements
-	queue* tempQ;
-	for(unsigned int ui=0; ui < len; ui++){
-
-		//get queue element at index #ui#
-		tempQ = queue_get(intQueue, ui);
-		if(tempQ == NULL){
-			continue;
-		}
-		printf("I.A. > Element %u of queue is %i.\n", ui, *( (int*)(tempQ->data) ) );
-	}
+	int*       i_ptr = queue_get(myQ, 0);
+	printf("I.A. > Element index 0 of queue is an integer  : %i.\n", *i_ptr);
+	long long* l_ptr = queue_get(myQ, 1);
+	printf("I.A. > Element index 1 of queue is a long long : %lld.\n", *l_ptr);
+	char*      s_ptr = queue_get(myQ, 2);
+	printf("I.A. > Element index 2 of queue is a string    : \"%.*s\".\n", s_len, s_ptr);
+	char*      c_ptr = queue_get(myQ, 3);
+	printf("I.A. > Element index 3 of queue is a character : %c.\n", *c_ptr);
 
 
 
 	//DELETE
 
-	//deletting queue
-	printf("I.A. > Deletting queue...\n");
-	queue_delete(&intQueue);
-	printf("I.A. > Queue deleted.\n");
-
-	//check length
-	printf("I.A. > Now queue length is %u.\n", queue_length(intQueue));
+	//clearing queue
+	printf("I.A. > Clearing queue...\n");
+	queue_clear(myQ);
+	printf("I.A. > Queue cleared (length %u).\n", myQ->length);
 
 
 

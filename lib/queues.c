@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-
+//only for memcpy()
+#include <string.h>
 
 //own header
 #include "queues.h"
@@ -17,17 +17,18 @@
 
 
 
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Queues [0.1.0] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Queues [0.1.1] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                  Queues by I.A.
 
         Queues is an utility program that allows you to create and manipulate
     queues of any type (fixed type recommended).
 
-        Theses queues are working as simple linked lists. Therefore, queues
-    lengths are dynamic so make sure to check it via queue_length(). Also,
-    some functions are using (queue**) instead of (queue*) so make sure to
-    give the correct reference.
-    (queue** is required when queue head can change.)
+        Theses queues are working as simple linked lists. Any kind of data
+    can be stored inside them : different types / sizes / allocation places
+    are allowed.
+
+        ANY ITEM ADDED IS ALLOCATED INSIDE QUEUE IN HEAP. Make sure to use
+    the correct queue_remove() or queue_pop() calls to free this data.
 
         As last point, some functions are using recursivity to work (for
     optimization). So there is ONE rule to keep in mind :
@@ -39,16 +40,16 @@
     *(a cycle is a queue which has its last element pointing to its first)
 
     DISCLAIMER about mixed types :
-        If you want to use different types in the same queue, you will have
-        to remember :
-
-        - The size of each data in the queue.
-          (No problem if they all have the same size)
-        - The type each value refers to.
-          (the first one is a float, the second one is an int, ...)
+            If you want to use different types in the same queue, you will
+        have to remember the type each value refers to.
+        (the first one is a float, the second one is an int, ...)
 
     22/01/2021 > [0.1.0] :
     - Created queues.c/.h.
+
+    26/07/2023 > [0.1.1] :
+    - Reformed the whole concept by adding queue_item structure.
+      (Simplificated & optimized)
 
     BUGS : .
     NOTES : .
@@ -90,82 +91,51 @@
 
 // ---------------- INSTANTIATION ----------------
 
-//create - delete - length
-#define MEMORY_COPY_FROM_A_TO_B(A,B,size) \
-	for(unsigned int u=0; u < size; u++){ \
-		( (char*)(B) )[u] = ( (char*)(A) )[u]; \
-	}
-
-queue* queue_create(void* data, unsigned int size){ //data used will no longer stay inside queue, it will be copied
-
-	//error cases
-	if(data == NULL || size == 0){
-		printf("RUNTIME ERROR > queues.c : queue_create() : Data is NULL or size is equal to 0.\n.");
-		return NULL;
-	}
+//create - clear
+queue* queue_create(){ //data used will no longer stay inside queue, it will be copied
 
 	//create queue
 	queue* q = malloc(sizeof(queue));
 	if(q == NULL){
-		printf("FATAL ERROR > queues.c : queue_create() : Computer refuses to give more memory.\n.");
+		printf("FATAL ERROR > queues.c : queue_create() : Computer refuses to give more memory.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	//set size
-	q->size = size;
-
-	//set data (copy)
-	q->data = malloc(q->size);
-	if(q->data == NULL){
-		printf("FATAL ERROR > queues.c : queue_create() : Computer refuses to give more memory.\n.");
-		exit(EXIT_FAILURE);
-	}
-	MEMORY_COPY_FROM_A_TO_B(data, q->data, q->size);
-	q->next = NULL;
+	//set initial values
+	q->length = 0;
+	q->first  = NULL;
 
 	return q;
 }
 
-unsigned int queue_length(queue* q){ // WARNING ! Can cause infinite loop if queue is a cycle !
-
-	//empty queue
-	if(q == NULL){
-		return 0;
-	}
-
-	//not empty queue
-	unsigned int length = 1;
-	while(q->next != NULL){
-		length++;
-		q = q->next;
-	}
-
-	return length;
-}
-
-static void queue_removeAll(queue* q){
+void queue_clear(queue* q){
 
 	//error cases
 	if(q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_delete() : Queue is NULL.\n");
+		printf("RUNTIME ERROR > queues.c : queue_clear() : Queue is NULL.\n");
 		return;
 	}
 
-	//recursive remove (from last to first)
-	if(q->next != NULL){
-		queue_removeAll(q->next);
+	//already empty => do nothing (optimization)
+	if(q->length == 0){ return; }
+
+	//iterative remove (optimized compared to "for(a on length) remove(a)")
+	queue_item* still_remaining = q->first;
+	while(still_remaining != NULL){
+
+		//keep a reference to the current element to remove
+		queue_item* current = still_remaining;
+
+		//keep also a reference to its (potentially) next remaining
+		still_remaining = current->next;
+
+		//free item
+		free(current->data);
+		free(current);
 	}
 
-	//free element
-	if(q->data != NULL){
-		free(q->data);
-	}
-	free(q);
-}
-
-void queue_delete(queue** q){ // WARNING ! Can cause free overlap if queue is a cycle !
-	queue_removeAll(*q);
-	*q = NULL;
+	//reset length
+	q->length = 0;
 }
 
 
@@ -177,201 +147,253 @@ void queue_delete(queue** q){ // WARNING ! Can cause free overlap if queue is a 
 
 // ---------------- USE ----------------
 
-//get - set
-queue* queue_get(queue* q, unsigned int index){
+//check integrity
+static char queue_check(queue* q, unsigned int index){
 
-	//error cases
+	//NULL queue
 	if(q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_get() : Queue is NULL.\n");
+		printf("RUNTIME ERROR > queues.c : queue_check() : Queue is NULL.\n");
+		return 1;
+	}
+
+	//out of bound
+	if(index >= q->length){
+		printf("RUNTIME ERROR > queues.c : queue_check() : Index '%u' is out of bound ('%u' elements).\n", index, q->length);
+		return 1;
+	}
+
+	return 0;
+}
+
+//get - set
+static queue_item* queue_getItem(queue* q, unsigned int index){
+	if(queue_check(q, index)){
 		return NULL;
 	}
 
 	//iterate until the correct q is found
-	unsigned int i = 0;
-	while(i != index){
-		i++;
+	queue_item* current = q->first;
+	for(unsigned int ui=0; ui < index; ui++){
 
-		//error case
-		if(q == NULL){
-			printf("RUNTIME ERROR : queues.c : queue_get() : Index %u is too big.\n", index);
+		//internal error (optional)
+		#ifdef INTERNAL_ERRORS
+		if(current == NULL){
+			printf("INTERNAL ERROR : queues.c : queue_get() : Next element should exist but is NULL.\n", index);
 			return NULL;
 		}
-		q = q->next;
+		#endif
+
+		current = current->next;
 	}
 
-	//correct element found
-	return q;
+	return current;
 }
 
-void queue_set(queue* q, unsigned int index, void* data, unsigned int size){ //data used will no longer stay inside queue, it will be copied
+void* queue_get(queue* q, unsigned int index){
+	if(queue_check(q, index)){
+		return NULL;
+	}
 
-	//error cases
-	if(q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_set() : Queue is NULL.\n");
+	//get queue item
+	queue_item* qi = queue_getItem(q, index);
+
+	//internal error (optional)
+	#ifdef INTERNAL_ERRORS
+	if(qi == NULL){
+		printf("INTERNAL ERROR > queues.c : queue_get() : Could not found queue_item at index %u.\n", index);
+		return NULL;
+	}
+	#endif
+
+	//return its data
+	return qi->data;
+}
+
+void queue_set(queue* q, unsigned int index, void* data, unsigned int size){
+	if(queue_check(q, index)){
 		return;
 	}
+
+	//incorrect given data
 	if(data == NULL || size == 0){
 		printf("RUNTIME ERROR > queues.c : queue_set() : Data is NULL or size equal to 0.\n");
 		return;
 	}
 
 	//get concerned element
-	queue* q_sel = queue_get(q, index);
-	if(q_sel == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_set() : Could not get data at specified index %u.\n", index);
+	queue_item* qi = queue_getItem(q, index);
+
+	//internal errors (optional)
+	#ifdef INTERNAL_ERRORS
+	if(qi == NULL){
+		printf("INTERNAL ERROR > queues.c : queue_set() : Could not found queue_item at index %u.\n", index);
 		return;
 	}
+	if(qi->data == NULL){
+		printf("INTERNAL ERROR > queues.c : queue_set() : Data at specified index %u is NULL.\n", index);
+		return;
+	}
+	#endif
 
-	//correct element found
-	if(q_sel->data != NULL)
-		free(q_sel->data); //free contained data (if existing)
+	//free previous element
+	free(qi->data);
 
-	//set new size
-	q_sel->size = size;
-
-	//set new data (copy)
-	q_sel->data = malloc(q_sel->size);
-	if(q_sel->data == NULL){
+	//create new data
+	qi->data = malloc(size);
+	if(qi->data == NULL){
 		printf("FATAL ERROR > queues.c : queue_set() : Computer refuses to give more memory.\n");
 		exit(EXIT_FAILURE);
 	}
-	MEMORY_COPY_FROM_A_TO_B(data, q_sel->data, q_sel->size);
+
+	//copy data into new location
+	memcpy(qi->data, data, size);
 }
 
 
 
 
 //add - remove
-void queue_addBeforeFirst(queue** q, void* data, unsigned int size){ //data used will no longer stay inside queue, it will be copied
-                                                                     //WARNING ! Queue head may change !
-	//error cases
-	if(q == NULL || *q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_addBeforeFirst() : Queue or queue pointer is NULL.\n");
+void queue_insertAfter(queue* q, unsigned int index, void* data, unsigned int size){
+	if(queue_check(q, index)){
 		return;
 	}
+
+	//incorrect given data
 	if(data == NULL || size == 0){
-		printf("RUNTIME ERROR > queues.c : queue_addBeforeFirst() : Data is NULL or size equal to 0.\n");
+		printf("RUNTIME ERROR > queues.c : queue_insertAfter() : Data is NULL or size equal to 0.\n");
 		return;
 	}
 
-	//create new element (new queue head)
-	queue* q_new = malloc(sizeof(queue));
-	if(q_new == NULL){
-		printf("FATAL ERROR > queues.c : queue_addBeforeFirst() : Computer refuses to give more memory.\n.");
+	//get concerned element
+	queue_item* qi = queue_getItem(q, index);
+
+	//internal errors (optional)
+	#ifdef INTERNAL_ERRORS
+	if(qi == NULL){
+		printf("INTERNAL ERROR > queues.c : queue_insertAfter() : Could not found queue_item at index %u.\n", index);
+		return;
+	}
+	if(qi->data == NULL){
+		printf("INTERNAL ERROR > queues.c : queue_insertAfter() : Data at specified index %u is NULL.\n", index);
+		return;
+	}
+	#endif
+
+	//get the element in position index+1
+	queue_item* qi_after = qi->next;
+
+	//create new item
+	qi->next = malloc(sizeof(queue_item));
+	if(qi->next == NULL){
+		printf("FATAL ERROR > queues.c : queue_insertAfter() : Computer refuses to give more memory.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	//set size
-	q_new->size = size;
-
-	//set data
-	q_new->data = malloc(q_new->size);
-	if(q_new->data == NULL){
-		printf("FATAL ERROR > queues.c : queue_addBeforeFirst() : Computer refuses to give more memory.\n.");
+	//create its data
+	(qi->next)->data = malloc(size);
+	if((qi->next)->data == NULL){
+		printf("FATAL ERROR > queues.c : queue_insertAfter() : Computer refuses to give more memory.\n");
 		exit(EXIT_FAILURE);
 	}
-	MEMORY_COPY_FROM_A_TO_B(data, q_new->data, q_new->size);
 
-	//set next
-	q_new->next = *q;
+	//copy data into new location
+	memcpy((qi->next)->data, data, size);
 
-	//set new queue head
-	*q = q_new;
+	//attach the rest of the queue (that can be NULL)
+	(qi->next)->next = qi_after;
+
+	//increase length
+	q->length++;
 }
 
-void queue_addAfter(queue* q, unsigned int index, void* data, unsigned int size){ //data used will no longer stay inside queue, it will be copied
-
-	//error cases
+void queue_append(queue* q, void* data, unsigned int size){
 	if(q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_addAfter() : Queue is NULL.\n");
+		printf("RUNTIME ERROR > queues.c : queue_append() : Queue is NULL.\n");
 		return;
 	}
+
+	//incorrect given data
 	if(data == NULL || size == 0){
-		printf("RUNTIME ERROR > queues.c : queue_addAfter() : Data is NULL or size equal to 0.\n");
+		printf("RUNTIME ERROR > queues.c : queue_append() : Data is NULL or size equal to 0.\n");
 		return;
 	}
 
-	//create new element
-	queue* q_new = malloc(sizeof(queue));
-	if(q_new == NULL){
-		printf("FATAL ERROR > queues.c : queue_addAfter() : Computer refuses to give more memory.\n.");
+	//create new item
+	queue_item* qi_new = malloc(sizeof(queue_item));
+	if(qi_new == NULL){
+		printf("FATAL ERROR > queues.c : queue_append() : Computer refuses to give more memory.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	//set size
-	q_new->size = size;
-
-	//set data
-	q_new->data = malloc(q_new->size);
-	if(q_new == NULL){
-		printf("FATAL ERROR > queues.c : queue_addAfter() : Computer refuses to give more memory.\n.");
+	//create its data
+	qi_new->data = malloc(size);
+	if(qi_new->data == NULL){
+		printf("FATAL ERROR > queues.c : queue_append() : Computer refuses to give more memory.\n");
 		exit(EXIT_FAILURE);
 	}
-	MEMORY_COPY_FROM_A_TO_B(data, q_new->data, q_new->size);
 
-	//get the element before the new (in position #index#)
-	queue* q_before = queue_get(q, index);
-	if(q_before == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_addAfter() : Could not get data at specified index %u.\n", index);
-		return;
+	//copy data into new location
+	memcpy(qi_new->data, data, size);
+
+	//attach next element (no element)
+	qi_new->next = NULL;
+
+	//attach to existing queue : case 1 : empty queue
+	if(q->first == NULL){
+		q->first = qi_new;
 	}
 
-	//get the element after the new (in position #index#+1)
-	queue* q_after = q_before->next;
+	//attach to existing queue : case 2 : get the latest element
+	else{
+		queue_item* last = q->first;
+		while(last->next != NULL){ last = last->next; }
+		last->next = qi_new;
+	}
 
-	//attach the 2 sides of the new element
-	q_before->next = q_new;
-	q_new->next    = q_after;
+	//increase length
+	q->length++;
 }
 
-void queue_remove(queue** q, unsigned int index){ //WARNING ! Queue head may change !
-
-	//error cases
-	if(q == NULL || *q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_remove() : Queue or queue pointer is NULL.\n");
-		return;
+void* queue_pop(queue* q, unsigned int index){
+	if(queue_check(q, index)){
+		return NULL;
 	}
+	queue_item* qi_toRemove;
 
-	//first case : first element of queue
+	//remove from chain : case 1 : first element
 	if(index == 0){
-
-		//get the 2nd element
-		queue* q_2nd = (*q)->next;
-
-		//remove the first one
-		if( (*q)->data != NULL){
-			free( (*q)->data );
-		}
-		free(*q);
-
-		//attach new head
-		*q = q_2nd;
+		qi_toRemove = q->first;
+		q->first    = qi_toRemove->next;
 	}
 
-	//other cases
+	//remove from chain : case 2 : get item preceding the one to remove
 	else{
+		queue_item* qi_before = queue_getItem(q, index-1);
 
-		//get the element before the one to remove (in position #index#-1)
-		queue* q_before = queue_get(*q, index);
-
-		//get the element to remove
-		queue* q_toRemove = q_before->next;
-		if(q_toRemove == NULL){
-			printf("RUNTIME ERROR > queues.c : queue_remove() : No element at index %u.\n", index);
+		//internal error (optional)
+		#ifdef INTERNAL_ERRORS
+		if(qi_before == NULL){
+			printf("INTERNAL ERROR > queues.c : queue_pop() : Could not found queue_item at index %u.\n", index-1);
 			return;
 		}
+		#endif
 
-		//get the element after the one to remove (in position #index#+1)
-		queue* q_after = q_before->next;
-
-		//attach the previous element to the next (skip the one to remove)
-		q_before->next = q_after;
-
-		//free the selected element
-		if(q_toRemove->data != NULL){
-			free(q_toRemove->data);
-		}
-		free(q_toRemove);
+		//new linking
+		qi_toRemove     = qi_before->next;
+		qi_before->next = qi_toRemove->next;
 	}
+
+	//free targetted qi
+	void* contained_data = qi_toRemove->data;
+	free(qi_toRemove);
+
+	//decrease length
+	q->length--;
+
+	return contained_data;
 }
-#undef MEMORY_COPY_FROM_A_TO_B
+
+void queue_remove(queue* q, unsigned int index){
+	void* data = queue_pop(q, index);
+	if(data != NULL){ free(data); }
+}

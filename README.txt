@@ -1,5 +1,6 @@
 This program is an utility program that allows you to create
-and manipulate queues of any type (fixed type recommended).
+and manipulate dynamic queues in C containing of any kind of data
+in any type and from any allocation place.
 
 A demonstration program is made in src/prog.c.
 
