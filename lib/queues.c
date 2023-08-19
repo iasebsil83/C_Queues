@@ -178,7 +178,7 @@ static queue_item* queue_getItem(queue* q, unsigned int index){
 		//internal error (optional)
 		#ifdef INTERNAL_ERRORS
 		if(current == NULL){
-			printf("INTERNAL ERROR : queues.c : queue_get() : Next element should exist but is NULL.\n", index);
+			printf("INTERNAL ERROR : queues.c : queue_get() : Next element should exist but is NULL.\n");
 			return NULL;
 		}
 		#endif
