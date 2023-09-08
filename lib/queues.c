@@ -97,7 +97,7 @@ queue* queue_create(){ //data used will no longer stay inside queue, it will be 
 	//create queue
 	queue* q = malloc(sizeof(queue));
 	if(q == NULL){
-		printf("FATAL ERROR > queues.c : queue_create() : Computer refuses to give more memory.\n");
+		puts("FATAL ERROR > queues.c : queue_create() : Computer refuses to give more memory.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -112,7 +112,7 @@ void queue_clear(queue* q){
 
 	//error cases
 	if(q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_clear() : Queue is NULL.\n");
+		puts("RUNTIME ERROR > queues.c : queue_clear() : Queue is NULL.");
 		return;
 	}
 
@@ -152,7 +152,7 @@ static char queue_check(queue* q, unsigned int index){
 
 	//NULL queue
 	if(q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_check() : Queue is NULL.\n");
+		puts("RUNTIME ERROR > queues.c : queue_check() : Queue is NULL.");
 		return 1;
 	}
 
@@ -178,7 +178,7 @@ static queue_item* queue_getItem(queue* q, unsigned int index){
 		//internal error (optional)
 		#ifdef INTERNAL_ERRORS
 		if(current == NULL){
-			printf("INTERNAL ERROR : queues.c : queue_get() : Next element should exist but is NULL.\n");
+			puts("INTERNAL ERROR : queues.c : queue_get() : Next element should exist but is NULL.\n");
 			return NULL;
 		}
 		#endif
@@ -215,8 +215,12 @@ void queue_set(queue* q, unsigned int index, void* data, unsigned int size){
 	}
 
 	//incorrect given data
-	if(data == NULL || size == 0){
-		printf("RUNTIME ERROR > queues.c : queue_set() : Data is NULL or size equal to 0.\n");
+	if(data == NULL){
+		puts("RUNTIME ERROR > queues.c : queue_set() : Data is NULL.");
+		return;
+	}
+	if(size == 0){
+		puts("RUNTIME ERROR > queues.c : queue_set() : Data size is 0.");
 		return;
 	}
 
@@ -241,7 +245,7 @@ void queue_set(queue* q, unsigned int index, void* data, unsigned int size){
 	//create new data
 	qi->data = malloc(size);
 	if(qi->data == NULL){
-		printf("FATAL ERROR > queues.c : queue_set() : Computer refuses to give more memory.\n");
+		puts("FATAL ERROR > queues.c : queue_set() : Computer refuses to give more memory.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -259,8 +263,12 @@ void queue_insertAfter(queue* q, unsigned int index, void* data, unsigned int si
 	}
 
 	//incorrect given data
-	if(data == NULL || size == 0){
-		printf("RUNTIME ERROR > queues.c : queue_insertAfter() : Data is NULL or size equal to 0.\n");
+	if(data == NULL){
+		puts("RUNTIME ERROR > queues.c : queue_insertAfter() : Data is NULL.");
+		return;
+	}
+	if(size == 0){
+		puts("RUNTIME ERROR > queues.c : queue_insertAfter() : Data size is 0.");
 		return;
 	}
 
@@ -285,14 +293,14 @@ void queue_insertAfter(queue* q, unsigned int index, void* data, unsigned int si
 	//create new item
 	qi->next = malloc(sizeof(queue_item));
 	if(qi->next == NULL){
-		printf("FATAL ERROR > queues.c : queue_insertAfter() : Computer refuses to give more memory.\n");
+		puts("FATAL ERROR > queues.c : queue_insertAfter() : Computer refuses to give more memory.");
 		exit(EXIT_FAILURE);
 	}
 
 	//create its data
 	(qi->next)->data = malloc(size);
 	if((qi->next)->data == NULL){
-		printf("FATAL ERROR > queues.c : queue_insertAfter() : Computer refuses to give more memory.\n");
+		puts("FATAL ERROR > queues.c : queue_insertAfter() : Computer refuses to give more memory.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -308,27 +316,31 @@ void queue_insertAfter(queue* q, unsigned int index, void* data, unsigned int si
 
 void queue_append(queue* q, void* data, unsigned int size){
 	if(q == NULL){
-		printf("RUNTIME ERROR > queues.c : queue_append() : Queue is NULL.\n");
+		puts("RUNTIME ERROR > queues.c : queue_append() : Queue is NULL.");
 		return;
 	}
 
 	//incorrect given data
-	if(data == NULL || size == 0){
-		printf("RUNTIME ERROR > queues.c : queue_append() : Data is NULL or size equal to 0.\n");
+	if(data == NULL){
+		puts("RUNTIME ERROR > queues.c : queue_append() : Data is NULL.");
+		return;
+	}
+	if(size == 0){
+		puts("RUNTIME ERROR > queues.c : queue_append() : Data size is 0.");
 		return;
 	}
 
 	//create new item
 	queue_item* qi_new = malloc(sizeof(queue_item));
 	if(qi_new == NULL){
-		printf("FATAL ERROR > queues.c : queue_append() : Computer refuses to give more memory.\n");
+		puts("FATAL ERROR > queues.c : queue_append() : Computer refuses to give more memory.");
 		exit(EXIT_FAILURE);
 	}
 
 	//create its data
 	qi_new->data = malloc(size);
 	if(qi_new->data == NULL){
-		printf("FATAL ERROR > queues.c : queue_append() : Computer refuses to give more memory.\n");
+		puts("FATAL ERROR > queues.c : queue_append() : Computer refuses to give more memory.");
 		exit(EXIT_FAILURE);
 	}
 

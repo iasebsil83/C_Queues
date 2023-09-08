@@ -50,14 +50,14 @@
 int main(){
 
 	//presentation
-	printf("I.A. > This is an example of using queues in C with \"queues.c/.h\".\n\n");
+	puts("I.A. > This is an example of using queues in C with \"queues.c/.h\".\n");
 
 
 
 	//CREATE
 
 	//create a queue
-	printf("I.A. > Creating a queue...\n");
+	puts("I.A. > Creating a queue...");
 	queue* myQ = queue_create();
 	printf("I.A. > Queue created (length %u).\n", myQ->length);
 
@@ -106,7 +106,7 @@ int main(){
 	//DELETE
 
 	//clearing queue
-	printf("I.A. > Clearing queue...\n");
+	puts("I.A. > Clearing queue...");
 	queue_clear(myQ);
 	printf("I.A. > Queue cleared (length %u).\n", myQ->length);
 
